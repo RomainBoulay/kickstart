@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# --- 1. Homebrew (macOS or Linuxbrew) ----------------------------------
 if ! command -v brew >/dev/null 2>&1; then
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
@@ -13,25 +14,25 @@ if ! command -v brew >/dev/null 2>&1; then
   exec "$SHELL" -l
 fi
 
+# --- 2. gh + clone terminal repo ---------------------------------------
 brew install gh
-
 gh auth login
 
-mkdir -p "$HOME/code"
-cd "$HOME/code"
+if [[ "$(uname -s)" == "Darwin" ]]; then
+  default_dir="$HOME/Developer"
+else
+  default_dir="$HOME/code"
+fi
+
+read -r -p "Folder for the terminal repo [$default_dir]: " repo_dir
+repo_dir="${repo_dir:-$default_dir}"
+repo_dir="${repo_dir/#\~/$HOME}"
+
+mkdir -p "$repo_dir"
+cd "$repo_dir"
 
 gh repo clone RomainBoulay/terminal || true
 cd terminal/
 
-case "$(uname -s)" in
-  Darwin)
-    ./install-macOS.sh
-    ;;
-  Linux)
-    ./install-ubuntu.sh
-    ;;
-  *)
-    echo "Unsupported OS: $(uname -s)" >&2
-    exit 1
-    ;;
-esac
+# --- 3. Per-OS installer --------
+./install.sh
